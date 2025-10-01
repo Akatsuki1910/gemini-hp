@@ -1,1 +1,1 @@
-# copilot-hp
+# gemini-hp
