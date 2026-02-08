@@ -2,7 +2,7 @@ name: Hourly Idea Generation
 
 on:
   schedule:
-    - cron: '0 * * * *' # 毎時0分に実行
+    - cron: "0 */6 * * *" # 6時間毎に1回実行
   workflow_dispatch:
 
 permissions:
@@ -24,7 +24,7 @@ jobs:
             Analyze the current codebase. Propose one specific new feature, refactoring, or improvement.
             Write the output to a file named 'new_idea.md' in the format:
             Title: [Idea Title]
-            
+
             [Idea Description Body]
 
       - name: Read Generated Idea
@@ -54,7 +54,7 @@ jobs:
           script: |
             const title = "${{ steps.read_idea.outputs.title }}";
             const body = `${{ steps.read_idea.outputs.body }}`;
-            
+
             if (title && body) {
               await github.rest.issues.create({
                 owner: context.repo.owner,
