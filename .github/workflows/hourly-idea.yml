@@ -1,0 +1,65 @@
+name: Hourly Idea Generation
+
+on:
+  schedule:
+    - cron: '0 * * * *' # 毎時0分に実行
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  generate-idea:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate Idea with Gemini
+        uses: google-github-actions/run-gemini-cli@main
+        with:
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          prompt: >-
+            Analyze the current codebase. Propose one specific new feature, refactoring, or improvement.
+            Write the output to a file named 'new_idea.md' in the format:
+            Title: [Idea Title]
+            
+            [Idea Description Body]
+
+      - name: Read Generated Idea
+        id: read_idea
+        run: |
+          if [ -f new_idea.md ]; then
+            # タイトル行を取得 (Title: を削除)
+            title=$(grep -m 1 "^Title:" new_idea.md | sed 's/^Title: //')
+            # 本文を取得 (1行目のタイトル行を削除)
+            body=$(sed '1d' new_idea.md)
+            
+            # GitHub Outputにセット
+            echo "title=$title" >> $GITHUB_OUTPUT
+            
+            # 本文は複数行になる可能性があるためEOF形式を使用
+            echo "body<<EOF" >> $GITHUB_OUTPUT
+            echo "$body" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+          else
+            echo "No idea file generated."
+          fi
+
+      - name: Create Issue
+        if: steps.read_idea.outputs.title != ''
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "${{ steps.read_idea.outputs.title }}";
+            const body = `${{ steps.read_idea.outputs.body }}`;
+            
+            if (title && body) {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: title,
+                body: body,
+                labels: ['gemini-idea']
+              });
+            }
