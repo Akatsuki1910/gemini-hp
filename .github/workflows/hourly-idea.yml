@@ -1,8 +1,8 @@
 name: Hourly Idea Generation
 
 on:
-  schedule:
-    - cron: "0 */6 * * *" # 6時間毎に1回実行
+  # schedule:
+    # - cron: "0 */6 * * *" # 6時間毎に1回実行
   workflow_dispatch:
 
 permissions:
